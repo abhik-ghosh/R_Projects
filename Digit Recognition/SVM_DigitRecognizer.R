@@ -37,6 +37,7 @@ library(readr)
 library(caret)
 library(caTools)
 library(e1071)
+library(dplyr)
 
 str(train_data)
 summary(train_data)
@@ -52,6 +53,12 @@ head(train_data)
 names(train_data)[1] <- "DIGIT"
 names(test_data)[1] <- "DIGIT"
 colnames(train_data)
+colnames(test_data)
+
+# take subset of common columns
+common_cols <- intersect(colnames(train_data), colnames(test_data))
+train_data <- select(train_data, common_cols)
+test_data <- select(test_data, common_cols)
 
 # Changing output variable "DIGIT" to factor type 
 train_data$DIGIT <- as.factor(train_data$DIGIT)
@@ -69,13 +76,16 @@ sum(duplicated(test_data)) # no duplicate rows
 set.seed(100)
 train_subset.indices = sample(1:nrow(train_data), 0.15*nrow(train_data))
 train = train_data[train_subset.indices, ]
+test_subset.indices = sample(1:nrow(test_data), 0.15*nrow(test_data))
+test <- test_data[test_subset.indices, ]
 
 # Scaling data 
 
 max(train[ ,2:ncol(train)]) # max pixel value is 255, lets use this to scale data
 train[ , 2:ncol(train)] <- train[ , 2:ncol(train)]/255
-test <- cbind(label = test_data[ ,1], test_data[ , 2:ncol(test_data)]/255)
-x<-test[,-1]
+#test <- cbind(test_data[,1],test_data[ , 2:ncol(test_data)]/255)
+test[ , 2:ncol(test)] <- test[ , 2:ncol(test)]/255
+
 #####################################################################################
 
 # 4. Model Building
@@ -84,23 +94,48 @@ x<-test[,-1]
 # 4.1 Using Linear Kernel
 #####################################################################
 
-Model_linear <- ksvm(DIGIT~ ., data = train, scaled = FALSE, kernel = "vanilladot", c=1)
+Model_linear <- ksvm(DIGIT~ ., data = train, scaled = FALSE, kernel = "vanilladot")
+print(Model_linear) 
 Eval_linear<- predict(Model_linear, test)
 
-model1_linear <- ksvm(label ~ ., data = train, scaled = FALSE, kernel = "vanilladot", C = 1)
-print(model1_linear) 
 
 #confusion matrix - Linear Kernel
-confusionMatrix(Eval_linear,test_data$DIGIT)
+confusionMatrix(Eval_linear,test$DIGIT)
 
 #--------------------------------------------------------------------
 # 4.2 Using RBF Kernel
 #####################################################################
 
 #Using RBF Kernel
-Model_RBF <- ksvm(letter~ ., data = train, scale = FALSE, kernel = "rbfdot")
-Eval_RBF<- predict(Model_RBF, test_data)
+Model_RBF <- ksvm(DIGIT~ ., data = train, scaled = FALSE, kernel = "rbfdot")
+Eval_RBF<- predict(Model_RBF,test)
 
 #confusion matrix - RBF Kernel
-confusionMatrix(Eval_RBF,test_data$DIGIT)
+confusionMatrix(Eval_RBF,test$DIGIT)
 
+############   Hyperparameter tuning and Cross Validation #####################
+
+
+trainControl <- trainControl(method="cv", number=5)
+
+
+# Metric <- "Accuracy" implies our Evaluation metric is Accuracy.
+
+metric <- "Accuracy"
+
+#Expand.grid functions takes set of hyperparameters, that we shall pass to our model.
+
+set.seed(7)
+grid <- expand.grid(.sigma=c(0.025, 0.05), .C=c(0.1,0.5,1,2) )
+
+
+#train function takes Target ~ Prediction, Data, Method = Algorithm
+#Metric = Type of metric, tuneGrid = Grid of Parameters,
+# trcontrol = Our traincontrol method.
+
+fit.svm <- train(DIGIT~., data=train, method="svmRadial", metric=metric, 
+                 tuneGrid=grid, trControl=trainControl)
+
+print(fit.svm)
+
+plot(fit.svm)
