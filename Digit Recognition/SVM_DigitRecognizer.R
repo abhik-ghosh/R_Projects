@@ -1,3 +1,5 @@
+setwd("C:/Users/abhik/Desktop/Work Folder/R Projects/Digit Recognition")
+
 ############################ SVM Digit Recogniser #################################
 # 1. Business Understanding
 # 2. Data Understanding
@@ -17,6 +19,7 @@
 #####################################################################################
 
 # 2. Data Understanding: 
+
 train_data <- read.csv("mnist_train.csv", stringsAsFactors = F)
 test_data <- read.csv("mnist_test.csv", stringsAsFactors = F)
 dim(train_data)
@@ -37,7 +40,8 @@ library(e1071)
 
 str(train_data)
 summary(train_data)
-View(train_data)
+#View(train_data)
+head(train_data)
 
 
 #####################################################################################
@@ -60,4 +64,43 @@ sapply(test_data, function(x) sum(is.na(x))) # No missing values
 sum(duplicated(train_data)) # no duplicate rows
 sum(duplicated(test_data)) # no duplicate rows
 
+# Sampling the data to make the computation faster
+
+set.seed(100)
+train_subset.indices = sample(1:nrow(train_data), 0.15*nrow(train_data))
+train = train_data[train_subset.indices, ]
+
+# Scaling data 
+
+max(train[ ,2:ncol(train)]) # max pixel value is 255, lets use this to scale data
+train[ , 2:ncol(train)] <- train[ , 2:ncol(train)]/255
+test <- cbind(label = test_data[ ,1], test_data[ , 2:ncol(test_data)]/255)
+x<-test[,-1]
 #####################################################################################
+
+# 4. Model Building
+
+#--------------------------------------------------------------------
+# 4.1 Using Linear Kernel
+#####################################################################
+
+Model_linear <- ksvm(DIGIT~ ., data = train, scaled = FALSE, kernel = "vanilladot", c=1)
+Eval_linear<- predict(Model_linear, test)
+
+model1_linear <- ksvm(label ~ ., data = train, scaled = FALSE, kernel = "vanilladot", C = 1)
+print(model1_linear) 
+
+#confusion matrix - Linear Kernel
+confusionMatrix(Eval_linear,test_data$DIGIT)
+
+#--------------------------------------------------------------------
+# 4.2 Using RBF Kernel
+#####################################################################
+
+#Using RBF Kernel
+Model_RBF <- ksvm(letter~ ., data = train, scale = FALSE, kernel = "rbfdot")
+Eval_RBF<- predict(Model_RBF, test_data)
+
+#confusion matrix - RBF Kernel
+confusionMatrix(Eval_RBF,test_data$DIGIT)
+
