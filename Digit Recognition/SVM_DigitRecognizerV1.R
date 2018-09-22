@@ -7,7 +7,6 @@ setwd("C:/Users/abhik/Desktop/Work Folder/R Projects/Digit Recognition")
 # 4. Model Building 
 #  4.1 Linear kernel
 #  4.2 RBF Kernel
-# 5 Hyperparameter tuning and cross validation
 
 #####################################################################################
 
@@ -103,8 +102,8 @@ Eval_linear<- predict(Model_linear, test)
 #confusion matrix - Linear Kernel
 confusionMatrix(Eval_linear,test$DIGIT)
 
-# Using Hyperparameter Tuning
-trainControl(method = "repeatedcv", number = 10, repeats = 3)
+# Using Hyperparameter Tuning and Crossvalidation
+trctrl <- trainControl(method = "repeatedcv", number = 10, repeats = 3)
 grid <- expand.grid(C = c(0, 0.1, 0.25, 0.5, 0.75, 1, 1.25))
 set.seed(3233)
 svm_Linear <- train(DIGIT ~., data = train, 
@@ -137,7 +136,7 @@ print(svm_Linear)
 # The final value used for the model was C = 0.1.
 plot(svm_Linear)
 
-# Let's try to make predictions using this model for our test set
+# Prediction for Testset
 Eval_linear<- predict(svm_Linear, test)
 #confusion matrix - Linear Kernel
 confusionMatrix(Eval_linear,test$DIGIT)
@@ -189,45 +188,13 @@ Eval_RBF<- predict(Model_RBF,test)
 confusionMatrix(Eval_RBF,test$DIGIT)
 
 # Using Hyperparameter Tuning and Cross Validation
-trainControl(method = "repeatedcv", number = 10, repeats = 3)
-grid <- expand.grid(sigma = c(0.025, 0.05), C = c(0, 0.1, 0.25, 0.5, 0.75, 1, 1.25))
-set.seed(3233)
-svm_Radial<- train(DIGIT ~., data = train, 
-                    method = "svmRadial",trControl=trctrl,
-                    tuneGrid = grid,
-                    metric="Accuracy",
-                    tuneLength = 10)
-print(svm_Radial)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 trainControl <- trainControl(method="cv", number=3)
-# Metric <- "Accuracy" implies our Evaluation metric is Accuracy.
 metric <- "Accuracy"
-#Expand.grid functions takes set of hyperparameters, that we shall pass to our model.
 set.seed(7)
 grid <- expand.grid(.sigma=c(0.025, 0.05), .C=c(0.1,0.5,1) )
-
 fit.svm <- train(DIGIT~., data=train, method="svmRadial", metric=metric,tuneGrid=grid, trControl=trainControl)
-
 print(fit.svm)
-
 plot(fit.svm)
-
-
 stopCluster(cl)
 
 #Support Vector Machines with Radial Basis Function Kernel 
@@ -240,7 +207,7 @@ stopCluster(cl)
 #Resampling: Cross-Validated (3 fold) 
 #Summary of sample sizes: 6001, 6000, 5999 
 #Resampling results across tuning parameters:
-  
+
 #  sigma  C    Accuracy   Kappa    
 #0.025  0.1  0.9233323  0.9148004
 #0.025  0.5  0.9572207  0.9524607
@@ -252,13 +219,9 @@ stopCluster(cl)
 #Accuracy was used to select the optimal model using the largest value.
 #The final values used for the model were sigma = 0.025 and C = 1.
 
-
+# Prediction for Testset
 Eval_SVMRadial<- predict(fit.svm,test)
-
-#confusion matrix - RBF Kernel
 confusionMatrix(Eval_SVMRadial,test$DIGIT)
-
-
 
 # Confusion Matrix and Statistics
 # 
