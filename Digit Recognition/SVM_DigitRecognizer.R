@@ -20,6 +20,16 @@ setwd("C:/Users/abhik/Desktop/Work Folder/R Projects/Digit Recognition")
 
 # 2. Data Understanding: 
 
+
+# Load required Librbaries: 
+library(kernlab)
+library(readr)
+library(caret)
+library(caTools)
+library(e1071)
+library(dplyr)
+library(doParallel)
+
 train_data <- read.csv("mnist_train.csv", stringsAsFactors = F)
 test_data <- read.csv("mnist_test.csv", stringsAsFactors = F)
 dim(train_data)
@@ -30,14 +40,6 @@ dim(test_data)
 # Test Data : 
 # Number of Instances: 9,999
 # Number of Attributes: 785
-
-# Load required Librbaries: 
-library(kernlab)
-library(readr)
-library(caret)
-library(caTools)
-library(e1071)
-library(dplyr)
 
 str(train_data)
 summary(train_data)
@@ -128,6 +130,8 @@ metric <- "Accuracy"
 set.seed(7)
 grid <- expand.grid(.sigma=c(0.025, 0.05), .C=c(0.1,0.5,1,2) )
 
+cl <- makePSOCKcluster(5)
+registerDoParallel(cl)
 
 #train function takes Target ~ Prediction, Data, Method = Algorithm
 #Metric = Type of metric, tuneGrid = Grid of Parameters,
@@ -135,6 +139,8 @@ grid <- expand.grid(.sigma=c(0.025, 0.05), .C=c(0.1,0.5,1,2) )
 
 fit.svm <- train(DIGIT~., data=train, method="svmRadial", metric=metric, 
                  tuneGrid=grid, trControl=trainControl)
+
+stopCluster(cl)
 
 print(fit.svm)
 
